@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ウズベキスタン1週間 究極のシルクロード紀行</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Leaflet CSS for Map -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <style>
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+            height: 300px;
+        }
+        body {
+            font-family: 'Helvetica Neue', Arial, 'Hiragino Kaku Gothic ProN', 'Hiragino Sans', Meiryo, sans-serif;
+            background-color: #faf8f5;
+        }
+        .hide-scrollbar::-webkit-scrollbar { display: none; }
+        .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        .fade-in { animation: fadeIn 0.4s ease-out forwards; }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        #map { height: 400px; border-radius: 1rem; z-index: 10; }
+        .food-card:hover img { transform: scale(1.05); }
+    </style>
+</head>
+<body class="text-stone-800 antialiased">
+
+    <header class="bg-cyan-800 text-stone-50 py-12 px-6 shadow-md relative overflow-hidden">
+        <div class="max-w-6xl mx-auto relative z-10">
+            <h1 class="text-4xl md:text-5xl font-bold mb-4 tracking-tight">🇺🇿 ウズベキスタン シルクロード紀行</h1>
+            <p class="text-xl md:text-2xl text-cyan-100 font-light max-w-3xl">
+                羽田から出発し、サマルカンド、ブハラ、ヒヴァを巡る8日間の旅。
+            </p>
+        </div>
+        <div class="absolute -right-20 -top-20 text-[200px] opacity-10 select-none">🕌</div>
+    </header>
+
+    <nav class="sticky top-0 bg-white/80 backdrop-blur-md z-50 border-b border-stone-200">
+        <div class="max-w-6xl mx-auto px-6 flex space-x-8 h-14 items-center font-medium text-stone-600 overflow-x-auto whitespace-nowrap hide-scrollbar">
+            <a href="#itinerary-section" class="hover:text-cyan-700">旅程</a>
+            <a href="#map-section" class="hover:text-cyan-700">地図</a>
+            <a href="#food-section" class="hover:text-cyan-700">グルメ</a>
+            <a href="#data-advice-section" class="hover:text-cyan-700">データ</a>
+        </div>
+    </nav>
+
+    <main class="max-w-6xl mx-auto p-6 my-8 space-y-24">
+
+        <!-- Itinerary Section -->
+        <section id="itinerary-section" class="space-y-6">
+            <div class="mb-8">
+                <h2 class="text-3xl font-semibold text-cyan-900 mb-2 border-b-2 border-cyan-200 pb-2 inline-block">旅程シミュレーター</h2>
+                <p class="text-stone-600 mt-4 leading-relaxed max-w-4xl">
+                    左側のルートをクリックすると、お手持ちの写真（地下鉄、レギスタン広場など）と共に詳細が表示されます。
+                </p>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+                <div class="lg:col-span-4 bg-white rounded-2xl shadow-sm border border-stone-200 p-6 h-[600px] overflow-y-auto hide-scrollbar">
+                    <h3 class="text-xl font-bold text-stone-700 mb-6 flex items-center"><span class="mr-2">🗺️</span> ルート選択</h3>
+                    <div id="timeline-container" class="relative border-l-2 border-cyan-200 ml-4 space-y-8"></div>
+                </div>
+
+                <div class="lg:col-span-8">
+                    <div id="detail-panel" class="bg-white rounded-2xl shadow-lg border border-stone-100 p-8 h-full min-h-[600px]"></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Map Section -->
+        <section id="map-section" class="space-y-6">
+            <div class="mb-8 text-center">
+                <h2 class="text-3xl font-semibold text-cyan-900 mb-2">シルクロード・ルートマップ</h2>
+                <p class="text-stone-600">タシケントからヒヴァまで、訪問先を地図上で確認できます。</p>
+            </div>
+            <div id="map" class="shadow-lg border-4 border-white"></div>
+        </section>
+
+        <!-- Food Section -->
+        <section id="food-section" class="space-y-10">
+            <div class="mb-8">
+                <h2 class="text-3xl font-semibold text-cyan-900 mb-2 border-b-2 border-cyan-200 pb-2 inline-block">現地の絶品グルメ</h2>
+                <p class="text-stone-600 mt-4">ウズベキスタンで絶対に外せない伝統料理。都市ごとに少しずつ味が異なります。</p>
+            </div>
+            
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                <!-- プロフ -->
+                <div class="food-card bg-white rounded-2xl overflow-hidden shadow-sm border border-stone-100 group">
+                    <div class="h-48 overflow-hidden">
+                        <img src="plov.jpg" alt="プロフ" class="w-full h-full object-cover transition-transform duration-500">
+                    </div>
+                    <div class="p-5">
+                        <h3 class="font-bold text-lg mb-2">プロフ (Plov)</h3>
+                        <p class="text-stone-500 text-sm">国民食の炊き込みご飯。羊肉、ニンジン、ひよこ豆が入ったスタミナ料理です。</p>
+                    </div>
+                </div>
+                <!-- シャシリク -->
+                <div class="food-card bg-white rounded-2xl overflow-hidden shadow-sm border border-stone-100 group">
+                    <div class="h-48 overflow-hidden">
+                        <img src="https://images.unsplash.com/photo-1603360946369-dc9bb6258143?auto=format&fit=crop&q=80&w=400" alt="シャシリク" class="w-full h-full object-cover transition-transform duration-500">
+                    </div>
+                    <div class="p-5">
+                        <h3 class="font-bold text-lg mb-2">シャシリク (Shashlik)</h3>
+                        <p class="text-stone-500 text-sm">炭火でじっくり焼いた串焼き肉。玉ねぎのスライスと一緒に食べるのが定番。</p>
+                    </div>
+                </div>
+                <!-- ラグマン -->
+                <div class="food-card bg-white rounded-2xl overflow-hidden shadow-sm border border-stone-100 group">
+                    <div class="h-48 overflow-hidden">
+                        <img src="rugman.jpg" alt="ラグマン" class="w-full h-full object-cover transition-transform duration-500">
+                    </div>
+                    <div class="p-5">
+                        <h3 class="font-bold text-lg mb-2">ラグマン (Lagman)</h3>
+                        <p class="text-stone-500 text-sm">手打ち麺を使った具沢山のうどん。トマトベースのスープが日本人の口にも合います。</p>
+                    </div>
+                </div>
+                <!-- ナン -->
+                <div class="food-card bg-white rounded-2xl overflow-hidden shadow-sm border border-stone-100 group">
+                    <div class="h-48 overflow-hidden">
+                        <img src="nan.jpg" alt="ナン" class="w-full h-full object-cover transition-transform duration-500">
+                    </div>
+                    <div class="p-5">
+                        <h3 class="font-bold text-lg mb-2">ナン (Non)</h3>
+                        <p class="text-stone-500 text-sm">都市によって模様や厚みが異なる主食パン。サマルカンドのナンは特に有名です。</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Data/Advice Section -->
+        <section id="data-advice-section" class="bg-stone-100 rounded-3xl p-8 md:p-12 shadow-inner border border-stone-200">
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+                <div class="space-y-6">
+                    <div class="bg-white p-6 rounded-xl shadow-sm border-l-4 border-orange-500">
+                        <h4 class="text-lg font-bold text-stone-800 mb-2">🚄 アフラシャブ号の予約</h4>
+                        <p class="text-stone-600">最新の車両は非常に人気です。1〜2ヶ月前のオンライン予約を強く推奨します。</p>
+                    </div>
+                    <div class="bg-white p-6 rounded-xl shadow-sm border-l-4 border-cyan-500">
+                        <h4 class="text-lg font-bold text-stone-800 mb-2">📱 移動アプリ</h4>
+                        <p class="text-stone-600">配車アプリ「Yandex Go」は必須。ぼったくりを回避でき、非常に快適です。</p>
+                    </div>
+                </div>
+                <div class="bg-white p-8 rounded-2xl shadow-sm border border-stone-200 h-[400px]">
+                    <h3 class="text-xl font-bold text-stone-700 mb-6 text-center">都市別 滞在比率</h3>
+                    <div class="chart-container">
+                        <canvas id="cityRatioChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <footer class="bg-stone-900 text-stone-400 py-12 text-center">
+        <p class="mb-4">🇺🇿 ウズベキスタン シルクロード紀行</p>
+        <p class="text-sm">&copy; 2026 Interactive Travel Guide. Images via Unsplash & User Photos.</p>
+    </footer>
+
+    <!-- Leaflet JS for Map -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script>
+        const itineraryData = [
+            {
+                day: 1,
+                title: "羽田からタシケントへ",
+                city: "タシケント",
+                transport: "✈️ 飛行機",
+                desc: "ウズベキスタンの空の玄関口へ。夜着の場合は、そのままホテルへ直行し、翌日に備えて体力を温存します。",
+                highlights: ["羽田出発", "タシケント着", "ホテル移動"],
+                imgUrl: "sub.jpg",
+                imgDesc: "タシケント地下鉄の美しいホーム装飾",
+                link: "https://sekaitrip.com/tashkent-sightseeing-places",
+                latlng: [41.2995, 69.2401]
+            },
+            {
+                day: 2,
+                title: "首都散策とサマルカンドへ",
+                city: "タシケント → サマルカンド",
+                transport: "🚄 アフラシャブ号 (約2時間)",
+                desc: "午前中にタシケント地下鉄を体験し、夕方に高速列車アフラシャブ号でサマルカンドへ。洗練された列車旅が始まります。",
+                highlights: ["地下鉄駅舎見学", "バザール散策", "高速列車でサマルカンドへ"],
+                imgUrl: "train.jpg",
+                imgDesc: "ウズベキスタンが誇る高速鉄道「アフラシャブ号」",
+                link: "https://www.arukikata.co.jp/tokuhain/257386/",
+                latlng: [41.2995, 69.2401]
+            },
+            {
+                day: 3,
+                title: "「青の都」サマルカンドを満喫",
+                city: "サマルカンド",
+                transport: "🚶 徒歩 / 🚕 車",
+                desc: "サマルカンドの核心へ。夜にライトアップされるレギスタン広場は、言葉を失うほどの美しさです。",
+                highlights: ["レギスタン広場", "シャーヒ・ズィンダ廟群", "グーリ・アミール廟"],
+                imgUrl: "reg.jpg",
+                imgDesc: "幻想的にライトアップされた夜のレギスタン広場",
+                link: "https://tabilapin.com/uzbekistan-samarkand-sightseeing/",
+                latlng: [39.6542, 66.9597]
+            },
+            {
+                day: 4,
+                title: "サマルカンドから聖都ブハラへ",
+                city: "サマルカンド → ブハラ",
+                transport: "🚄 高速鉄道 (約1.5時間)",
+                desc: "サマルカンドでの最後の買い物を済ませ、午後の便でブハラへ移動。ブハラの夜景を楽しみます。",
+                highlights: ["ビビハニム・モスク", "鉄道移動", "ブハラ夜着"],
+                imgUrl: "km.jpg",
+                imgDesc: "夜空に映えるブハラのカラーン・ミナレット",
+                link: "https://www.arukikata.co.jp/tokuhain/258029/",
+                latlng: [39.7747, 64.4286]
+            },
+            {
+                day: 5,
+                title: "ブハラ旧市街の迷宮歩き",
+                city: "ブハラ",
+                transport: "🚶 徒歩",
+                desc: "歴史が凝縮された旧市街を散策。カラーン・ミナレットを起点に、中世のイスラム建築を堪能します。",
+                highlights: ["カラーン・ミナレット", "アルク城", "バザール巡り"],
+                imgUrl: "kmb.jpg",
+                imgDesc: "荘厳な佇まいのカラーン・ミナレット周辺",
+                link: "https://srptravel.com/bukhara-modelcourse/",
+                latlng: [39.7747, 64.4286]
+            },
+            {
+                day: 6,
+                title: "ブハラから砂漠を越えてヒヴァへ",
+                city: "ブハラ → ヒヴァ",
+                transport: "🚂 鉄道",
+                desc: "砂漠を走る長距離列車で、西の果てヒヴァへ。到着後のイチャン・カラの城壁は圧巻の迫力です。",
+                highlights: ["キジルクム砂漠横断", "城壁の夕暮れ", "ヒヴァ宿泊"],
+                imgUrl: "hv.jpg",
+                imgDesc: "夕日に照らされるヒヴァの巨大な城壁",
+                link: "https://ss6213.com/%E3%80%90%E3%82%A6%E3%82%BA%E3%83%99%E3%82%AD%E3%82%B9%E3%82%BF%E3%83%B3%E2%91%A4%E3%80%91%E3%83%96%E3%83%8F%E3%83%A9%E3%81%8B%E3%82%89%E3%83%92%E3%83%B4%E3%82%A1%E3%81%B8%EF%BC%86%E3%83%92%E3%83%B4/",
+                latlng: [41.3781, 60.3639]
+            },
+            {
+                day: 7,
+                title: "ヒヴァ観光とタシケントへの帰還",
+                city: "ヒヴァ → タシケント",
+                transport: "✈️ 国内線 (約1.5時間)",
+                desc: "城壁内の迷宮を探索後、ウルゲンチ空港から国内線で一気にタシケントへ。旅の最後を締めくくります。",
+                highlights: ["カルタ・ミナル", "ジュマ・モスク", "国内線で帰還"],
+                imgUrl: "hvc.jpg",
+                imgDesc: "砂漠のオアシス都市、ヒヴァのイチャン・カラ",
+                link: "https://worldheritage.blog/uzbekistan/itchan-kala/",
+                latlng: [41.3781, 60.3639]
+            },
+            {
+                day: 8,
+                title: "タシケントから帰国",
+                city: "タシケント",
+                transport: "✈️ 飛行機",
+                desc: "最後のお土産をバザールで調達し、空港へ。充実の1週間を胸に羽田への帰路につきます。",
+                highlights: ["お土産調達", "帰国便チェックイン", "羽田着（翌日）"],
+                imgUrl: "bz.jpg",
+                imgDesc: "最後に訪れるタシケントの街並み",
+                link: "https://worldheritage.blog/uzbekistan/tashkent-metro/",
+                latlng: [41.2995, 69.2401]
+            }
+        ];
+
+        let currentDayIndex = 0;
+        let map, polyline;
+
+        function initMap() {
+            // 地図の初期化
+            map = L.map('map', { scrollWheelZoom: false }).setView([40.5, 65.0], 6);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '&copy; OpenStreetMap contributors'
+            }).addTo(map);
+
+            // ルート線の描画
+            const points = itineraryData.map(d => d.latlng);
+            polyline = L.polyline(points, { color: '#0891b2', weight: 4, opacity: 0.6, dashArray: '10, 10' }).addTo(map);
+
+            // マーカーの設置
+            itineraryData.forEach((data, i) => {
+                const marker = L.marker(data.latlng).addTo(map);
+                marker.bindPopup(`<b>Day ${data.day}: ${data.city}</b>`);
+                marker.on('click', () => selectDay(i));
+            });
+        }
+
+        function renderTimeline() {
+            const container = document.getElementById('timeline-container');
+            container.innerHTML = '';
+            itineraryData.forEach((data, index) => {
+                const isActive = index === currentDayIndex;
+                const dotColor = isActive ? 'bg-cyan-600 ring-4 ring-cyan-100' : 'bg-stone-300 group-hover:bg-cyan-400';
+                const textColor = isActive ? 'text-cyan-800 font-bold' : 'text-stone-500 group-hover:text-cyan-700';
+                const item = document.createElement('div');
+                item.className = 'relative pl-8 cursor-pointer group transition-all';
+                item.onclick = () => selectDay(index);
+                item.innerHTML = `
+                    <div class="absolute w-4 h-4 rounded-full -left-[9px] top-1 transition-all duration-300 ${dotColor}"></div>
+                    <div class="mb-1 ${textColor} text-sm">【${data.day}日目】 ${data.city}</div>
+                    <div class="${isActive ? 'text-stone-800' : 'text-stone-400'} font-medium">${data.title}</div>
+                `;
+                container.appendChild(item);
+            });
+        }
+
+        function renderDetailPanel() {
+            const panel = document.getElementById('detail-panel');
+            const data = itineraryData[currentDayIndex];
+            panel.innerHTML = `
+                <div class="fade-in space-y-6 h-full flex flex-col">
+                    <div class="flex justify-between items-start border-b border-stone-100 pb-6 flex-wrap gap-4">
+                        <div>
+                            <span class="inline-block px-3 py-1 bg-cyan-100 text-cyan-800 rounded-full text-xs font-bold mb-2">Day ${data.day}</span>
+                            <h3 class="text-2xl md:text-3xl font-bold text-stone-800">${data.title}</h3>
+                        </div>
+                        <div class="text-right">
+                            <div class="text-xs text-stone-500 mb-1">主な移動</div>
+                            <div class="font-bold text-cyan-700">${data.transport}</div>
+                        </div>
+                    </div>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-8 flex-grow">
+                        <div class="space-y-4">
+                            <p class="text-stone-600 leading-relaxed">${data.desc}</p>
+                            <h4 class="font-bold text-stone-700">ハイライト</h4>
+                            <ul class="text-stone-600 space-y-2">
+                                ${data.highlights.map(h => `<li class="flex items-center"><span class="text-cyan-500 mr-2">✔</span> ${h}</li>`).join('')}
+                            </ul>
+                            <a href="${data.link}" target="_blank" class="inline-block mt-4 text-sm font-bold text-cyan-700 underline">詳細サイトへ</a>
+                        </div>
+                        
+                        <div class="relative rounded-2xl overflow-hidden shadow-xl border-4 border-white aspect-video md:aspect-auto h-full min-h-[250px] bg-stone-200">
+                            <img src="${data.imgUrl}" alt="${data.imgDesc}" class="w-full h-full object-cover" onerror="this.src='https://via.placeholder.com/800x600?text=Photo+Not+Found'">
+                            <div class="absolute bottom-0 inset-x-0 bg-black/60 backdrop-blur-md p-3 text-white text-xs">
+                                <p class="font-bold mb-1">現地写真</p>
+                                <p class="opacity-80">${data.imgDesc}</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            // 地図をその都市へ移動
+            if (map) map.flyTo(data.latlng, 8);
+        }
+
+        function selectDay(index) {
+            currentDayIndex = index;
+            renderTimeline();
+            renderDetailPanel();
+        }
+
+        function initChart() {
+            const ctx = document.getElementById('cityRatioChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['サマルカンド', 'ブハラ', 'タシケント', 'ヒヴァ', '移動'],
+                    datasets: [{
+                        data: [25, 25, 20, 15, 15],
+                        backgroundColor: ['#0891b2', '#d97706', '#059669', '#dc2626', '#a8a29e']
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { position: 'bottom' } }
+                }
+            });
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            initMap();
+            renderTimeline();
+            renderDetailPanel();
+            initChart();
+        });
+    </script>
+</body>
+</html>
